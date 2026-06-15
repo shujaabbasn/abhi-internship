@@ -1,0 +1,32 @@
+# python
+venv/
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+dist/
+
+# env / secrets
+.env
+
+# generated caches
+cached_intents.json
+cached_field_prompts.json
+intents_cache.json
+
+# model weights / large binaries (downloaded, not authored)
+*.onnx
+*.onnx.json
+*.bin
+*.pth
+*.gguf
+*.tar
+*.tar.bz2
+models/
+voices/*.onnx
+voices/vits-*/
+chroma_db/
+
+# os junk
+.DS_Store

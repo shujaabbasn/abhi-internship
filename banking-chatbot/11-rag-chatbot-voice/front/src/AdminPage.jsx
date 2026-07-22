@@ -166,7 +166,7 @@ function AdminPage({goToChat}) {
       </p>
       <div style={{display:'flex',flexDirection:'column',gap:'8px',marginTop:'12px'}}>
         <textarea
-          style={{padding:'10px',borderRadius:'2px',border:'1px solid #ffffff',fontSize:'15px',resize:'none'}}
+          style={{padding:'10px',borderRadius:'8px',border:'1px solid #ffffff',fontSize:'15px',resize:'none'}}
           placeholder="Intent name"
           value={name}
           onChange={(e)=>setName(e.target.value)}

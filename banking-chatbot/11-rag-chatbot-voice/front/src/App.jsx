@@ -276,9 +276,3 @@ function App() {
   )
 }
 export default App
-
-
-//props,components
-// button for intents
-//fields using json or comma seoperated
-//dynamic workflows??

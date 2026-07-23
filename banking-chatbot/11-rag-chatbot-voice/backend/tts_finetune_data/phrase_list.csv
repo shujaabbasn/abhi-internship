@@ -1,0 +1,119 @@
+id,emotion_tag,source,text
+0001,apologetic,check_balance_notfound,اکاؤنٹ نہیں ملا۔
+0002,neutral,check_balance_success,آپ کا بیلنس تین سو پچاس روپے ہے۔
+0003,neutral,check_balance_success,آپ کا بیلنس نو سو روپے ہے۔
+0004,neutral,check_balance_success,آپ کا بیلنس ایک ہزار پانچ سو روپے ہے۔
+0005,neutral,check_balance_success,آپ کا بیلنس چار ہزار دو سو روپے ہے۔
+0006,neutral,check_balance_success,آپ کا بیلنس آٹھ ہزار سات سو پچاس روپے ہے۔
+0007,neutral,check_balance_success,آپ کا بیلنس پندرہ ہزار روپے ہے۔
+0008,neutral,check_balance_success,آپ کا بیلنس پچیس ہزار روپے ہے۔
+0009,neutral,check_balance_success,آپ کا بیلنس تینتیس ہزار دو سو اعشاریہ پانچ صفر روپے ہے۔
+0010,neutral,check_balance_success,آپ کا بیلنس اکتالیس ہزار سات سو روپے ہے۔
+0011,neutral,check_balance_success,آپ کا بیلنس اڑسٹھ ہزار پانچ سو روپے ہے۔
+0012,neutral,check_balance_success,آپ کا بیلنس ننانوے ہزار نو سو ننانوے روپے ہے۔
+0013,neutral,check_balance_success,آپ کا بیلنس ایک لاکھ پچیس ہزار روپے ہے۔
+0014,neutral,check_balance_success,آپ کا بیلنس دو لاکھ پچاس ہزار روپے ہے۔
+0015,neutral,check_balance_success,آپ کا بیلنس چار لاکھ پچھتر ہزار اعشاریہ دو پانچ روپے ہے۔
+0016,neutral,check_balance_success,آپ کا بیلنس نو لاکھ ننانوے ہزار نو سو ننانوے روپے ہے۔
+0017,neutral,check_balance_success,آپ کا بیلنس بارہ لاکھ پچاس ہزار روپے ہے۔
+0018,neutral,check_balance_success,آپ کا بیلنس چونتیس لاکھ روپے ہے۔
+0019,neutral,check_balance_success,آپ کا بیلنس چھہتر لاکھ روپے ہے۔
+0020,neutral,check_balance_success,آپ کا بیلنس ایک کروڑ پانچ لاکھ روپے ہے۔
+0021,neutral,check_balance_success,آپ کا بیلنس دو کروڑ پچاس لاکھ روپے ہے۔
+0022,apologetic,send_money_notfound,آپ کا اکاؤنٹ نہیں ملا۔
+0023,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس تین سو پچاس روپے ہے، دو سو پچاس نہیں بھیجے جا سکتے۔
+0024,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس نو سو روپے ہے، آٹھ سو نہیں بھیجے جا سکتے۔
+0025,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس ایک ہزار پانچ سو روپے ہے، ایک ہزار پانچ سو نہیں بھیجے جا سکتے۔
+0026,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس چار ہزار دو سو روپے ہے، دو ہزار نہیں بھیجے جا سکتے۔
+0027,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس آٹھ ہزار سات سو پچاس روپے ہے، تین ہزار سات سو پچاس نہیں بھیجے جا سکتے۔
+0028,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس پندرہ ہزار روپے ہے، پانچ ہزار نہیں بھیجے جا سکتے۔
+0029,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس پچیس ہزار روپے ہے، نو ہزار نو سو ننانوے نہیں بھیجے جا سکتے۔
+0030,apologetic,send_money_insufficient,کافی رقم نہیں ہے۔ آپ کا بیلنس تینتیس ہزار دو سو اعشاریہ پانچ صفر روپے ہے، بارہ ہزار پانچ سو نہیں بھیجے جا سکتے۔
+0031,reassuring,send_money_success,دو سو پچاس USD بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: تین سو پچاس روپے
+0032,reassuring,send_money_success,آٹھ سو PKR بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: نو سو روپے
+0033,reassuring,send_money_success,ایک ہزار پانچ سو EUR بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: ایک ہزار پانچ سو روپے
+0034,reassuring,send_money_success,دو ہزار GBP بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: چار ہزار دو سو روپے
+0035,reassuring,send_money_success,تین ہزار سات سو پچاس USD بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: آٹھ ہزار سات سو پچاس روپے
+0036,reassuring,send_money_success,پانچ ہزار PKR بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: پندرہ ہزار روپے
+0037,reassuring,send_money_success,نو ہزار نو سو ننانوے EUR بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: پچیس ہزار روپے
+0038,reassuring,send_money_success,بارہ ہزار پانچ سو GBP بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: تینتیس ہزار دو سو اعشاریہ پانچ صفر روپے
+0039,reassuring,send_money_success,پچیس ہزار USD بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: اکتالیس ہزار سات سو روپے
+0040,reassuring,send_money_success,پچاس ہزار PKR بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: اڑسٹھ ہزار پانچ سو روپے
+0041,reassuring,send_money_success,ستاسی ہزار پانچ سو اعشاریہ پانچ صفر EUR بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: ننانوے ہزار نو سو ننانوے روپے
+0042,reassuring,send_money_success,ایک لاکھ پچاس ہزار GBP بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: ایک لاکھ پچیس ہزار روپے
+0043,apologetic,currency_conversion_fail,یہ کرنسی تبدیلی مکمل نہیں ہو سکی۔
+0044,neutral,currency_conversion_success,دو سو پچاس USD = ایک لاکھ انتالیس ہزار پانچ سو PKR
+0045,neutral,currency_conversion_success,آٹھ سو EUR = ایک لاکھ اکاون ہزار دو سو PKR
+0046,neutral,currency_conversion_success,ایک ہزار پانچ سو GBP = ایک لاکھ چھہتر ہزار چار سو PKR
+0047,neutral,currency_conversion_success,دو ہزار PKR = تین اعشاریہ چھ USD
+0048,neutral,currency_conversion_success,تین ہزار سات سو پچاس PKR = تین اعشاریہ ایک EUR
+0049,apologetic,unknown,معاف کیجیے، میں سمجھ نہیں سکا۔ براہ کرم دوبارہ واضح طور پر بتائیں۔
+0050,friendly,request_loan_decline,اگر آپ کبھی بھی ہمارے قرض کے آپشنز کے بارے میں جاننا چاہیں تو ہمیں بتائیں۔
+0051,reassuring,request_loan_accept,ہماری ٹیم دو کاروباری دنوں میں آپ سے رابطہ کرے گی۔
+0052,friendly,request_loan_maybe,اگر آپ کا ارادہ بدل جائے تو ہمیں بتائیں۔
+0053,neutral,bank_timings,تمام برانچز صبح نو بجے کھلتی ہیں اور شام پانچ بجے بند ہوتی ہیں۔
+0054,reassuring,not_credited,ہماری ٹیم آپ سے رابطہ کرے گی۔
+0055,apologetic,validation_error,غلط کرنسی کوڈ۔ براہ کرم معیاری تین حروف کا کوڈ استعمال کریں، مثلاً یو ایس ڈی، پی کے آر۔
+0056,apologetic,validation_error,غلط اکاؤنٹ نمبر۔ یہ دس سے بیس ہندسوں کے درمیان ہونا چاہیے۔
+0057,apologetic,validation_error,اکاؤنٹ نہیں ملا۔
+0058,apologetic,validation_error,رقم منفی نہیں ہو سکتی۔
+0059,apologetic,validation_error,رقم بہت زیادہ ہے۔ براہ کرم بینک سے براہ راست رابطہ کریں۔
+0060,apologetic,validation_error,رقم ایک عدد ہونی چاہیے۔
+0061,apologetic,validation_error,شہر کا نام تصدیق نہیں ہو سکا۔ براہ کرم درست شہر کا نام درج کریں۔
+0062,apologetic,validation_error,براہ کرم 'ہاں' یا 'نہیں' میں جواب دیں۔
+0063,apologetic,validation_error,آپ اپنے ہی اکاؤنٹ میں رقم نہیں بھیج سکتے۔
+0064,friendly,field_prompt,براہ کرم اپنا اکاؤنٹ نمبر بتائیں۔
+0065,friendly,field_prompt,براہ کرم وہ اکاؤنٹ نمبر بتائیں جہاں سے آپ رقم بھیجنا چاہتے ہیں۔
+0066,friendly,field_prompt,براہ کرم اکاؤنٹ نمبر بتائیں۔
+0067,friendly,field_prompt,براہ کرم وصول کنندہ کا اکاؤنٹ نمبر بتائیں۔
+0068,friendly,field_prompt,براہ کرم رقم بتائیں۔
+0069,friendly,field_prompt,براہ کرم کرنسی بتائیں، مثلاً یو ایس ڈی یا پی کے آر۔
+0070,friendly,field_prompt,براہ کرم وہ کرنسی بتائیں جس سے تبدیل کرنا ہے۔
+0071,friendly,field_prompt,براہ کرم وہ کرنسی بتائیں جس میں تبدیل کرنا ہے۔
+0072,friendly,field_prompt,براہ کرم شہر کا نام بتائیں۔
+0073,friendly,field_prompt,کیا آپ ہمارے قرض کے آپشنز کے بارے میں جاننا چاہیں گے؟ (ہاں یا نہیں)
+0074,friendly,field_prompt,کیا آپ کو قرض میں دلچسپی ہے؟ کیا ہماری ٹیم آپ سے رابطہ کرے؟ (ہاں یا نہیں)
+0075,neutral,knowledge_base_style,ABHI کئی طرح کے قرضے پیش کرتا ہے، جیسے ٹریکٹر لون، موٹرسائیکل لون اور کاروباری قرضہ۔
+0076,neutral,knowledge_base_style,کاشتکار قرضہ خاص طور پر کسانوں کی مالی ضروریات پوری کرنے کے لیے بنایا گیا ہے۔
+0077,neutral,knowledge_base_style,نسواں قرضہ خواتین کاروباری افراد کے لیے ایک قلیل مدتی سہولت ہے۔
+0078,neutral,knowledge_base_style,آسان اکاؤنٹ میں کوئی کم از کم بیلنس یا لین دین کی شرط نہیں ہے۔
+0079,neutral,knowledge_base_style,روزانہ منافع اکاؤنٹ آپ کو روزانہ کی بنیاد پر بچت کرنے کا موقع دیتا ہے۔
+0080,neutral,knowledge_base_style,سہولت کرنٹ اکاؤنٹ کاروباری افراد کے لیے سب سے بہتر انتخاب ہے۔
+0081,neutral,knowledge_base_style,اعتماد بچت اکاؤنٹ آپ کے مستقبل کو محفوظ بنانے کے لیے بہترین ہے۔
+0082,neutral,knowledge_base_style,سنہری قرضہ آپ کے سونے کے زیورات کو کاروباری سرمائے میں تبدیل کرتا ہے۔
+0083,neutral,knowledge_base_style,معذرت، اس سوال کا جواب دستیاب معلومات میں موجود نہیں ہے۔
+0084,neutral,knowledge_base_style,براہ کرم مزید تفصیلات کے لیے قریبی برانچ سے رابطہ کریں۔
+0085,neutral,knowledge_base_style,ہمارے تمام قرضہ جات کی شرح سود مسابقتی اور آسان اقساط پر مبنی ہے۔
+0086,neutral,knowledge_base_style,اے بی ایچ آئی بینک ایپ کے ذریعے آپ گھر بیٹھے تمام سہولات حاصل کر سکتے ہیں۔
+0087,neutral,number_coverage,بارہ روپے
+0088,neutral,number_coverage,پندرہ روپے
+0089,neutral,number_coverage,اٹھائیس روپے
+0090,neutral,number_coverage,بیالیس روپے
+0091,neutral,number_coverage,سڑسٹھ روپے
+0092,neutral,number_coverage,ننانوے روپے
+0093,neutral,number_coverage,ایک سو روپے
+0094,neutral,number_coverage,ایک سو پینتیس روپے
+0095,neutral,number_coverage,تین سو پچاس روپے
+0096,neutral,number_coverage,چار سو اسی روپے
+0097,neutral,number_coverage,نو سو ننانوے روپے
+0098,neutral,number_coverage,ایک ہزار روپے
+0099,neutral,number_coverage,دو ہزار پانچ سو روپے
+0100,neutral,number_coverage,چار ہزار پانچ سو روپے
+0101,neutral,number_coverage,سات ہزار آٹھ سو روپے
+0102,neutral,number_coverage,نو ہزار نو سو ننانوے روپے
+0103,neutral,number_coverage,دس ہزار روپے
+0104,neutral,number_coverage,پندرہ ہزار پانچ سو روپے
+0105,neutral,number_coverage,پچیس ہزار روپے
+0106,neutral,number_coverage,اڑتالیس ہزار روپے
+0107,neutral,number_coverage,ننانوے ہزار نو سو ننانوے روپے
+0108,neutral,number_coverage,ایک لاکھ روپے
+0109,neutral,number_coverage,ایک لاکھ پچھتر ہزار روپے
+0110,neutral,number_coverage,دو لاکھ پچاس ہزار روپے
+0111,neutral,number_coverage,پانچ لاکھ روپے
+0112,neutral,number_coverage,نو لاکھ ننانوے ہزار نو سو ننانوے روپے
+0113,neutral,number_coverage,دس لاکھ روپے
+0114,neutral,number_coverage,پچیس لاکھ روپے
+0115,neutral,number_coverage,پچاس لاکھ روپے
+0116,neutral,number_coverage,ایک کروڑ روپے
+0117,neutral,number_coverage,دو کروڑ پچاس لاکھ روپے
+0118,neutral,number_coverage,پانچ کروڑ روپے

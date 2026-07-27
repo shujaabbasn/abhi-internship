@@ -28,5 +28,11 @@ voices/*.onnx
 voices/vits-*/
 chroma_db/
 
+# piper-finetune training artifacts (regeneratable / multi-gb checkpoints)
+piper-finetune/checkpoints/
+piper-finetune/lightning_logs/
+piper-finetune/cache/
+piper-finetune/piper1_venv/
+
 # os junk
 .DS_Store

@@ -11,5 +11,7 @@ not committed, all regeneratable / too big for git:
 - piper1_venv/ - the training venv
 
 dataset/ is the actual recorded+converted training audio. output/config.json is the
-trained model's config - the real .onnx it produced lives in the running project's
-backend/voices/ folder (gitignored there too, same reason).
+trained model's config - the actual exported voice this pipeline produced is checked
+in at banking-chatbot/11-rag-chatbot-voice/backend/voices/ur_PK-abhibank-finetune.onnx
+(force-added past the *.onnx gitignore rule, since this one's actually authored here
+rather than a downloaded base model).

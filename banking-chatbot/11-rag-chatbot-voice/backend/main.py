@@ -8,6 +8,7 @@ import inspect
 import requests
 import os
 import tempfile
+import shutil
 import backend_logic
 import cron
 import tts
@@ -63,8 +64,8 @@ def transcribe(file:UploadFile=File(...)):
     os.close(fd)
     try:
         with open(temp_path,"wb") as out_file:
-            out_file.write(file.file.read())
-        text=whisper_stt.transcribe_audio(temp_path)
+            shutil.copyfileobj(file.file,out_file)
+        text,_=whisper_stt.transcribe_audio(temp_path)
         return {"text":text}
     finally:
         os.remove(temp_path)

@@ -17,8 +17,7 @@ def run_sync():
         intents[doc["name"]]={
             "description":doc["description"],
             "required_fields":doc["required_fields"],
-            "example_question":doc.get("example_question"),
-            "example_fields":doc.get("example_fields",{})
+            "examples":doc.get("examples",[])
         }
     field_prompts={}
     for doc in field_prompts_collection.find():

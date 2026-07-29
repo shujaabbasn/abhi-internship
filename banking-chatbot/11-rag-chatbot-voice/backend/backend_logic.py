@@ -1,5 +1,6 @@
 from sentence_transformers import SentenceTransformer
 from db import accounts_collection,intents_collection,field_prompts_collection
+from urdu_numbers import urdu_words_to_numbers
 import chromadb
 import requests
 import json
@@ -59,8 +60,7 @@ def get_cached_intents():
         intents[doc["name"]]={
             "description":doc["description"],
             "required_fields":doc["required_fields"],
-            "example_question":doc.get("example_question"),
-            "example_fields":doc.get("example_fields",{})
+            "examples":doc.get("examples",[])
         }
     return intents
 
@@ -103,9 +103,9 @@ def detect_intent(query):
             "description":data["description"],
             "required_fields":data["required_fields"]
         }
-        if data.get("example_question"):
-            example_response=json.dumps({"intent":name,"fields":data.get("example_fields",{}),"language":"en"})
-            examples_text+="Example  User question: "+data["example_question"]+". Response: "+example_response+". "
+        for example in data.get("examples",[]):
+            example_response=json.dumps({"intent":name,"fields":example.get("fields",{}),"language":example.get("language","en")})
+            examples_text+="Example  User question: "+example["question"]+". Response: "+example_response+". "
 
     intents_as_json=json.dumps(intent_definitions,indent=2)
     prompt=(
@@ -132,28 +132,31 @@ def detect_intent(query):
         "it does not match any intent, classify it as unknown. "
         "Never treat a word from the question itself (like 'acc', 'account', 'balance', 'number') as an account_number. "
         "Only extract account_number if the user actually states an actual number. If no number is given, leave it out completely. "
+        "The 'I want to ...' sentence structure (or its Urdu equivalent 'میں ... چاہتا ہوں') by itself does not "
+        "mean request_loan - it only matters what the user wants to do. Only classify as request_loan if they "
+        "specifically mention a loan or قرض, never just because of this sentence structure. "
         +examples_text+
-        "Example  User question: ABHI کون سے قرض کی اقسام پیش کرتا ہے؟. Response: "
-        +json.dumps({"intent":"knowledge_base","fields":{},"language":"ur"})+". "
-        "Example  User question: میں قرض کے لیے درخواست دینا چاہتا ہوں۔. Response: "
-        +json.dumps({"intent":"request_loan","fields":{},"language":"ur"})+". "
-        "Example  User question: آج کیا تاریخ ہے؟. Response: "
-        +json.dumps({"intent":"unknown","fields":{},"language":"ur"})+". "
-        "IMPORTANT: Greetings, small talk (like 'how are you', 'what's up', 'kia haal hai', 'salam'), "
-        "or any question that does not clearly and specifically match one of the intents above must be "
+        "IMPORTANT: Greetings and small talk (like 'how are you', 'what's up', 'kia haal hai', 'salam') "
+        "must be classified as greeting with empty fields. "
+        "Any other question that does not clearly and specifically match one of the intents above must be "
         "classified as unknown with empty fields. When in doubt, use unknown rather than guessing a specific intent. "
         "Also classify the language of the message as 'en' or 'ur' (Urdu script or Roman Urdu). "
+        "Roman Urdu means Urdu words spelled out using English letters (e.g. 'hai','kya','kia','mera','apka','chahiye', "
+        "'paisay','bhejna','kaise','kahan') - a message written this way is still Urdu, classify it as 'ur' even though "
+        "none of the letters are Urdu script. Only classify as 'en' if the actual words are English words, not just the alphabet. "
+        "The 'language' value must be judged independently for every message based on its own grammar - "
+        "never copy the language field from the examples above, each example's language only describes that example's own text. "
         "Ignore these banking/project terms when judging the language, since they are commonly used in English "
         "even inside Urdu sentences: "+", ".join(DOMAIN_WORDS_EN)+". Judge the language only from the grammar and other words. "
         "Now classify this question, respond ONLY in JSON with keys intent, fields, and language, nothing else. "
         "User question: "+query
     )
     response=requests.post(OLLAMA_URL,json={
-        "model":"qwen2.5:3b",
+        "model":"llama3",
         "messages":[{"role":"user","content":prompt}],
         "format":"json",
         "stream":False,
-        "options":{"temperature":0}
+        "options":{"temperature":0.3}
     })
     result=response.json()
     llm_output=result["message"]["content"].strip()
@@ -243,20 +246,14 @@ NUMBER_WORDS={
     "pachas":50,"pachaas":50,"saath":60,
     "sattar":70,"assi":80,"assy":80,"nabbe":90,"nawbay":90,
     "sau":100,"sou":100,"hazar":1000,"hazaar":1000,
-
-    #urdu script (matches URDU_ONES in tts.py, since urdu numbers are irregular per-word, not composed like english)
-    "صفر":0,"ایک":1,"دو":2,"تین":3,"چار":4,"پانچ":5,"چھ":6,"سات":7,"آٹھ":8,"نو":9,
-    "دس":10,"گیارہ":11,"بارہ":12,"تیرہ":13,"چودہ":14,"پندرہ":15,"سولہ":16,"سترہ":17,"اٹھارہ":18,"انیس":19,
-    "بیس":20,"اکیس":21,"بائیس":22,"تئیس":23,"چوبیس":24,"پچیس":25,"چھبیس":26,"ستائیس":27,"اٹھائیس":28,"انتیس":29,
-    "تیس":30,"اکتیس":31,"بتیس":32,"تینتیس":33,"چونتیس":34,"پینتیس":35,"چھتیس":36,"سینتیس":37,"اڑتیس":38,"انتالیس":39,
-    "چالیس":40,"اکتالیس":41,"بیالیس":42,"تینتالیس":43,"چوالیس":44,"پینتالیس":45,"چھیالیس":46,"سینتالیس":47,"اڑتالیس":48,"انچاس":49,
-    "پچاس":50,"اکاون":51,"باون":52,"تریپن":53,"چون":54,"پچپن":55,"چھپن":56,"ستاون":57,"اٹھاون":58,"انسٹھ":59,
-    "ساٹھ":60,"اکسٹھ":61,"باسٹھ":62,"تریسٹھ":63,"چونسٹھ":64,"پینسٹھ":65,"چھیاسٹھ":66,"سڑسٹھ":67,"اڑسٹھ":68,"انہتر":69,
-    "ستر":70,"اکہتر":71,"بہتر":72,"تہتر":73,"چوہتر":74,"پچھتر":75,"چھہتر":76,"ستتر":77,"اٹھہتر":78,"اناسی":79,
-    "اسی":80,"اکیاسی":81,"بیاسی":82,"تراسی":83,"چوراسی":84,"پچاسی":85,"چھیاسی":86,"ستاسی":87,"اٹھاسی":88,"نواسی":89,
-    "نوے":90,"اکانوے":91,"بانوے":92,"ترانوے":93,"چورانوے":94,"پچانوے":95,"چھیانوے":96,"ستانوے":97,"اٹھانوے":98,"ننانوے":99,
-    "سو":100,"ہزار":1000,"لاکھ":100000,"کروڑ":10000000
+    #urdu script entries are derived from urdu_numbers.py, the same source tts.py uses for speech output
+    **urdu_words_to_numbers()
 }
+
+#currency/filler words allowed alongside a spoken number, e.g. "500 rupees" or "دو سو روپے".
+#any other unrecognized word means the transcription is unreliable - refuse to guess rather
+#than silently parse a wrong amount (see: "دو سوروں بے" misparsing to 2 instead of 200).
+AMOUNT_FILLER_WORDS={"rupee","rupees","rs","pkr","rupaye","rupya","only","and","روپے","روپیہ","روپیے"}
 
 def parse_word_number(text):
     words=text.lower().replace("-"," ").split()
@@ -264,8 +261,10 @@ def parse_word_number(text):
     current=0
     found=False
     for word in words:
-        if word not in NUMBER_WORDS:
+        if word in AMOUNT_FILLER_WORDS:
             continue
+        if word not in NUMBER_WORDS:
+            return None
         found=True
         value=NUMBER_WORDS[word]
         if value>=100:
@@ -295,8 +294,6 @@ def extract_digits(text):
 def ask_llm(query,relevant_parts,language="en"):
     context=" ".join(relevant_parts)
     if language=="ur":
-        #alif-urdu only follows instructions reliably when the prompt itself is phrased in urdu,
-        #not when given english meta-instructions asking for urdu output
         model="alif-urdu"
         prompt=(
             "ذیل میں دی گئی معلومات کی بنیاد پر جواب دیں۔ "
@@ -315,7 +312,7 @@ def ask_llm(query,relevant_parts,language="en"):
         "model":model,
         "messages":[{"role":"user","content":prompt}],
         "stream":False,
-        "options":{"temperature":0}
+        "options":{"temperature":0.3}
     })
     result=response.json()
     return result["message"]["content"]
@@ -337,33 +334,33 @@ def check_balance(fields,original_query,language):
     account=get_account(account_number)
     if account is None:
         if language=="ur":
-            return "اکاؤنٹ "+account_number+" نہیں ملا۔"
-        return "Account "+account_number+" was not found."
+            return "اکاؤنٹ نہیں ملا۔"
+        return "Account was not found."
     balance=account["balance"]
     if language=="ur":
         return "آپ کا بیلنس "+str(balance)+" روپے ہے۔"
-    return "Your balance in account "+account_number+" is PKR "+str(balance)+"."
+    return "Your balance is PKR "+str(balance)+"."
 
 def send_money(fields,original_query,language):
     amount=float(fields["amount"])
     from_account=fields["from_account"]
     recipient_account=fields["recipient_account"]
-    currency=fields["currency"]
+    currency="pkr"
     sender=get_account(from_account)
     if sender is None:
         if language=="ur":
-            return "آپ کا اکاؤنٹ "+from_account+" نہیں ملا۔"
-        return "Your account "+from_account+" was not found."
+            return "آپ کا اکاؤنٹ نہیں ملا۔"
+        return "Your account was not found."
     if amount>sender["balance"]:
         if language=="ur":
-            return "کافی رقم نہیں ہے۔ آپ کے اکاؤنٹ "+from_account+" میں بیلنس "+str(sender["balance"])+" روپے ہے، "+str(amount)+" نہیں بھیجے جا سکتے۔"
-        return "Insufficient funds. Your balance in "+from_account+" is PKR "+str(sender["balance"])+", cannot send "+str(amount)+"."
+            return "کافی رقم نہیں ہے۔ آپ کا بیلنس "+str(sender["balance"])+" روپے ہے، "+str(amount)+" نہیں بھیجے جا سکتے۔"
+        return "Insufficient funds. Your balance is PKR "+str(sender["balance"])+", cannot send "+str(amount)+"."
     accounts_collection.update_one({"account_number":from_account},{"$inc":{"balance":-amount}})
     accounts_collection.update_one({"account_number":recipient_account},{"$inc":{"balance":amount}})
     new_balance=sender["balance"]-amount
     if language=="ur":
-        return str(amount)+" "+currency+" اکاؤنٹ "+recipient_account+" میں بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ "+from_account+" میں نیا بیلنس: "+str(new_balance)+" روپے"
-    return "Sending "+str(amount)+" "+currency+" to account "+recipient_account+". TRANSACTION SUCCESSFUL. New balance in "+from_account+": PKR "+str(new_balance)
+        return str(amount)+" "+currency+" بھیجے جا رہے ہیں۔ ٹرانزیکشن کامیاب رہی۔ نیا بیلنس: "+str(new_balance)+" روپے"
+    return "Sending "+str(amount)+" "+currency+". TRANSACTION SUCCESSFUL. New balance: PKR "+str(new_balance)
 
 def check_weather(fields,original_query,language):
     city=fields["city"]
@@ -389,6 +386,11 @@ def knowledge_base(fields,original_query,language):
     results=knowledge_collection.query(query_embeddings=[query_embedding])
     return ask_llm(original_query,results["documents"][0],language)
 
+def greeting(fields,original_query,language):
+    if language=="ur":
+        return "خوش آمدید! میں آپ کی بینکنگ میں کس طرح مدد کر سکتا ہوں؟"
+    return "Hello! How can I help you with your banking today?"
+
 def unknown(fields,original_query,language):
     if language=="ur":
         return "معاف کیجیے، میں سمجھ نہیں سکا۔ براہ کرم دوبارہ واضح طور پر بتائیں۔"
@@ -404,14 +406,14 @@ def unknown(fields,original_query,language):
         "stream":False,
         "options":{
             "num_predict":40,
-            "temperature":0
+            "temperature":0.3
         }
     })
     return response.json()["message"]["content"].strip()
 
 def request_loan(fields,original_query,language):
     wants_info=fields.get("wants_info","").lower()
-    if wants_info not in ["yes","y","yeah","sure","haan","han"]:
+    if wants_info not in ["yes","y","yeah","sure","haan","han","oh"]:
         if language=="ur":
             return "اگر آپ کبھی بھی ہمارے قرض کے آپشنز کے بارے میں جاننا چاہیں تو ہمیں بتائیں۔"
         return "let us know if you'd like to hear about our loan options anytime."
@@ -428,6 +430,11 @@ def bank_timings(fields,original_query,language):
     if language=="ur":
         return "تمام برانچز صبح 9 بجے کھلتی ہیں اور شام 5 بجے بند ہوتی ہیں۔"
     return "all branches open at 9 am and close at 5 pm."
+
+def not_credited(fields,original_query,language):
+    if language=="ur":
+        return "ہماری ٹیم آپ سے رابطہ کرے گی۔"
+    return "our team will contact you."
 
 
 #select box for intent

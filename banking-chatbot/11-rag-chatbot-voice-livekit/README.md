@@ -1,8 +1,6 @@
-copy of 11-rag-chatbot-voice, prototyping a real-time voice pipeline on livekit's
-agents framework instead of the browser record-button flow.
+prototyping a real-time voice pipeline on livekit's agents framework instead of the browser record-button flow.
 
-agent.py runs it in console mode - no livekit server needed to test, it's a full
-local simulation (mic in, speaker out).
+no livekit server needed to test, it's a full local simulation (mic in, speaker out).
 
 - stt: faster-whisper wrapped as a custom stt.STT, restricted to en/ur only
 - llm: the existing /chat backend called directly from llm_node - no real llm plugin

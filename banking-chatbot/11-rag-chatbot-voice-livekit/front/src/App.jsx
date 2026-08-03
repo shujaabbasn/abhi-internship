@@ -1,9 +1,11 @@
 import {useState,useRef} from 'react'
 import {Toaster} from 'react-hot-toast'
 import toast from 'react-hot-toast'
+import {Room,RoomEvent,Track} from 'livekit-client'
 import AdminPage from './AdminPage.jsx'
+import SoundWaveVisualizer from './SoundWaveVisualizer.jsx'
 
-const API='http://localhost:8001'
+const API='http://localhost:8002'
 const SILENCE_DURATION_MS=2000
 const NOISE_FLOOR_CALIBRATION_MS=400
 const SILENCE_MARGIN_ABOVE_NOISE_FLOOR=0.015
@@ -21,7 +23,11 @@ function App() {
   const [audioEnabled,setAudioEnabled]=useState(false)
   const [lastMessage,setLastMessage]=useState('')
   const [listening,setListening]=useState(false)
+  const [micStream,setMicStream]=useState(null)
+  const [callActive,setCallActive]=useState(false)
+  const [callStream,setCallStream]=useState(null)
   const micRef=useRef(null)
+  const roomRef=useRef(null)
   const audioUnlockedRef=useRef(false)
 
   function unlockAudio() {
@@ -104,6 +110,7 @@ function App() {
         const audioBlob=new Blob(audioChunks,{type:'audio/webm'})
         stream.getTracks().forEach(track=>track.stop())
         setListening(false)
+        setMicStream(null)
         setLoading(true)
 
         try {
@@ -132,10 +139,64 @@ function App() {
       micRef.current=mediaRecorder
       mediaRecorder.start()
       setListening(true)
+      setMicStream(stream)
       checkSilence()
     } catch(err) {
       toast.error('mic access denied')
       setListening(false)
+    }
+  }
+
+  function stopLiveCall() {
+    if(roomRef.current) {
+      roomRef.current.disconnect()
+      roomRef.current=null
+    }
+    setCallActive(false)
+    setCallStream(null)
+  }
+
+  //3rd option, separate from both the mic button above (record -> transcribe -> text
+  //chat) and typed chat below: a real-time voice call over an actual livekit room.
+  //the agent (already running as its own worker process) joins the same room and does
+  //its own stt/backend/tts entirely on its side - this is a separate, unsynchronized
+  //session from the other two, since the agent keeps its own conversation state
+  async function startLiveCall() {
+    try {
+      unlockAudio() //primes autoplay permission before the agent's reply arrives async
+      const res=await fetch(API+'/livekit-token')
+      if(!res.ok) {
+        toast.error('could not get a room token')
+        return
+      }
+      const {token,url}=await res.json()
+
+      const room=new Room()
+      room.on(RoomEvent.TrackSubscribed,(track)=>{
+        if(track.kind===Track.Kind.Audio) {
+          const el=track.attach()
+          document.body.appendChild(el)
+          el.play().catch(err=>toast.error('agent audio blocked by browser: '+err.message))
+        }
+      })
+
+      await room.connect(url,token)
+      //back to livekit's defaults (echo cancellation, noise suppression, auto gain all on).
+      //previously disabled these suspecting they distorted speech for whisper, but the real
+      //cause of bad transcriptions was the detect_language() crash bug in whisper_stt.py,
+      //now fixed. noiseSuppression specifically matters here - without it, office background
+      //noise was reaching silero VAD undamped and getting mistaken for a real user turn,
+      //which could interrupt/cancel the agent's in-progress reply
+      await room.localParticipant.setMicrophoneEnabled(true)
+
+      const micTrack=room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track
+      if(micTrack) setCallStream(new MediaStream([micTrack.mediaStreamTrack]))
+
+      roomRef.current=room
+      setCallActive(true)
+    } catch(err) {
+      toast.error('could not join voice room: '+err.message)
+      setCallActive(false)
     }
   }
 
@@ -257,18 +318,26 @@ function App() {
         value={input}
         onChange={(e)=>setInput(e.target.value)}
         onKeyDown={handleKey}
-        disabled={loading}
+        disabled={loading||callActive}
       />
+        {listening&&<SoundWaveVisualizer stream={micStream} color="#0059ff" />}
+        {callActive&&<SoundWaveVisualizer stream={callStream} color="#00c753" />}
         <button
           style={{padding:'10px 20px',borderRadius:'10px',backgroundColor:listening?'#ff0000':'#0095ff',color:'white',cursor:'pointer',fontSize:'15px'}}
           onClick={listening?stopVoiceInput:startVoiceInput}
-          disabled={loading}>
+          disabled={loading||callActive}>
           {listening?'Stop':'Mic'}
+        </button>
+        <button
+          style={{padding:'10px 20px',borderRadius:'10px',backgroundColor:callActive?'#ff0000':'#00c853',color:'white',cursor:'pointer',fontSize:'15px'}}
+          onClick={callActive?stopLiveCall:startLiveCall}
+          disabled={loading||listening}>
+          {callActive?'End Call':'Call Live'}
         </button>
         <button
           style={{padding:'10px 20px',borderRadius:'10px',backgroundColor:'#0095ff',color:'white',cursor:'pointer',fontSize:'15px'}}
           onClick={()=>sendMessage()}
-          disabled={loading}>
+          disabled={loading||callActive}>
           Send
         </button>
       </div>

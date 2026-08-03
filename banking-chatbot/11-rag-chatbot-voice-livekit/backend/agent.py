@@ -24,11 +24,18 @@ class WhisperSTT(stt.STT):
 
     async def _recognize_impl(self,buffer,*,language=None,conn_options=DEFAULT_API_CONNECT_OPTIONS):
         frame=merge_frames(buffer)
-        fd, wav_path=tempfile.mkstemp(suffix=".wav")
+        fd,wav_path=tempfile.mkstemp(suffix=".wav")
         os.close(fd)
         try:
             with open(wav_path,"wb") as f:
                 f.write(frame.to_wav_bytes())
+            #TEMP DEBUG: keep a copy of the exact audio whisper receives, so we can listen
+            #to it directly and tell apart "bad audio reaching whisper" vs "whisper mistranscribing
+            #clean audio" - remove once the transcription-quality issue is solved
+            import shutil as _shutil,time as _time
+            debug_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),"debug_audio")
+            os.makedirs(debug_dir,exist_ok=True)
+            _shutil.copy(wav_path,os.path.join(debug_dir,"debug_"+str(int(_time.time()*1000))+".wav"))
             text,detected_language=whisper_stt.transcribe_audio(wav_path)
         finally:
             os.remove(wav_path)
@@ -48,25 +55,36 @@ class PlaceholderLLM(llm.LLM):
 class BankingAgent(Agent):
     def __init__(self):
         super().__init__(instructions="You are a banking voice assistant.")
-        self._session_state = {
+        self._session_state={
             "pending_intent":None,
             "pending_fields":{},
             "missing_fields":[],
-            "language": "en",
+            "language":"en",
         }
 
-    async def llm_node(self, chat_ctx, tools, model_settings):
+    async def llm_node(self,chat_ctx,tools,model_settings):
         user_message=chat_ctx.items[-1].text_content
-        response=requests.post(
-            f"{CHAT_BACKEND_URL}/chat",
-            json={"message": user_message, "session": self._session_state},
-            timeout=45,
-        )
-        result=response.json()
-        self._session_state=result["session"]
-        return result["message"]
+        language=self._session_state.get("language","en")
+        try:
+            response=requests.post(
+                f"{CHAT_BACKEND_URL}/chat",
+                json={"message":user_message,"session":self._session_state},
+                timeout=45,
+            )
+            response.raise_for_status()
+            result=response.json()
+            self._session_state=result["session"]
+            return result["message"]
+        except Exception:
+            #any backend failure (timeout, connection refused, a 500, a malformed response)
+            #should degrade to a spoken apology instead of dead silence - previously a crash
+            #here meant the turn just failed with no response at all. session_state is left
+            #untouched so a transient failure doesn't wipe out multi-turn progress
+            if language=="ur":
+                return "معذرت، کچھ غلط ہو گیا۔ براہ کرم دوبارہ کوشش کریں۔"
+            return "Sorry, something went wrong. Please try again."
 
-    async def tts_node(self, text, model_settings):
+    async def tts_node(self,text,model_settings):
         full_text=""
         async for chunk in text:
             full_text+=chunk
@@ -86,17 +104,17 @@ class BankingAgent(Agent):
             yield frame
 
 
-async def entrypoint(ctx: JobContext):
+async def entrypoint(ctx:JobContext):
     await ctx.connect()
 
     session=AgentSession(
         vad=silero.VAD.load(),
         stt=WhisperSTT(),
         llm=PlaceholderLLM(),
-        turn_handling={"turn_detection": "vad"},
+        turn_handling={"turn_detection":"vad"},
     )
 
-    await session.start(agent=BankingAgent(), room=ctx.room)
+    await session.start(agent=BankingAgent(),room=ctx.room)
 
 
 if __name__ == "__main__":

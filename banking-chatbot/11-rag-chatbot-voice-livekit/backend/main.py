@@ -4,11 +4,13 @@ from pydantic import BaseModel
 from typing import Optional, List
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
+from livekit.api import AccessToken, VideoGrants
 import inspect
 import requests
 import os
 import tempfile
 import shutil
+import uuid
 import backend_logic
 import cron
 import tts
@@ -18,6 +20,10 @@ load_dotenv()
 CURRENCY_API=os.environ["CURRENCY_API"]
 CITIES_API=os.environ["CITIES_API"]
 FRONTEND_URL=os.environ["FRONTEND_URL"]
+LIVEKIT_URL=os.environ["LIVEKIT_URL"]
+LIVEKIT_API_KEY=os.environ["LIVEKIT_API_KEY"]
+LIVEKIT_API_SECRET=os.environ["LIVEKIT_API_SECRET"]
+LIVEKIT_ROOM_NAME="banking-room"
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -57,6 +63,15 @@ class TTSSettingsIn(BaseModel):
 def speak(request:SpeakRequest):
     audio=tts.text_to_speech(request.text,request.language)
     return Response(content=audio,media_type="audio/wav")
+
+@app.get("/livekit-token")
+def get_livekit_token():
+    #a fresh random identity per call, so re-joining after a disconnect doesn't
+    #collide with a still-lingering participant of the same name in the room
+    identity="user-"+uuid.uuid4().hex[:8]
+    grants=VideoGrants(room_join=True,room=LIVEKIT_ROOM_NAME)
+    token=AccessToken(LIVEKIT_API_KEY,LIVEKIT_API_SECRET).with_identity(identity).with_grants(grants)
+    return {"token":token.to_jwt(),"url":LIVEKIT_URL,"room":LIVEKIT_ROOM_NAME}
 
 @app.post("/transcribe")
 def transcribe(file:UploadFile=File(...)):
@@ -119,6 +134,9 @@ def validate_field(field_name,value):
             return False,"Could not validate city name. Please enter a valid city."
     if field_name in ["wants_info","wants_contact"]:
         if value.lower() not in ["yes","no","y","n","yeah","nah","haan","hn","han","nahi","nhi","nope","oh","ہاں","نہیں","نہي"]:
+            return False,"Please answer with 'yes' or 'no'."
+    if field_name=="confirm_transfer":
+        if not (backend_logic.is_positive_confirmation(value) or backend_logic.is_negative_confirmation(value)):
             return False,"Please answer with 'yes' or 'no'."
     return True,None
 
@@ -202,13 +220,34 @@ def chat(request:ChatRequest):
                 message=normalized
         is_valid,error=validate_field(field_name,message)
         if not is_valid:
-            retry_message=backend_logic.localize_error(error,session.language)+" "+backend_logic.generate_prompt_message(field_name,session.language)
+            if field_name=="confirm_transfer":
+                confirm_prompt=backend_logic.generate_confirmation_prompt(session.pending_fields,session.language)
+                retry_message=backend_logic.localize_error(error,session.language)+" "+confirm_prompt
+            else:
+                retry_message=backend_logic.localize_error(error,session.language)+" "+backend_logic.generate_prompt_message(field_name,session.language)
             return {
                 "type":"ask_field",
                 "message":retry_message,
                 "field":field_name,
                 "session":session.model_dump()
             }
+        if field_name=="confirm_transfer":
+            if backend_logic.is_negative_confirmation(message):
+                cancel_msg="ٹرانزیکشن منسوخ کر دی گئی ہے۔" if session.language=="ur" else "Transaction cancelled."
+                return {
+                    "type":"answer",
+                    "message":cancel_msg,
+                    "session":Session(language=session.language).model_dump()
+                }
+            else:
+                session.pending_fields[field_name]="yes"
+                session.missing_fields.pop(0)
+                result=run_function(session.pending_intent,session.pending_fields,message,session.language)
+                return {
+                    "type":"answer",
+                    "message":result,
+                    "session":Session(language=session.language).model_dump()
+                }
 
         session.pending_fields[field_name]=message
         session.missing_fields.pop(0)
@@ -216,12 +255,25 @@ def chat(request:ChatRequest):
         if session.pending_intent=="request_loan" and field_name=="wants_info" and message.lower() in ["yes","y","yeah","sure","haan","han","oh","ہاں"]:
             session.missing_fields.append("wants_contact")
 
+        if session.pending_intent=="send_money" and not session.missing_fields and "confirm_transfer" not in session.pending_fields:
+            session.missing_fields.append("confirm_transfer")
+            confirm_msg=backend_logic.generate_confirmation_prompt(session.pending_fields,session.language)
+            return {
+                "type":"ask_field",
+                "message":confirm_msg,
+                "field":"confirm_transfer",
+                "session":session.model_dump()
+            }
+
         if session.missing_fields:
             next_field=session.missing_fields[0]
-            next_message=backend_logic.generate_prompt_message(next_field,session.language)
-            if session.pending_intent=="request_loan" and next_field=="wants_contact":
-                loan_info=backend_logic.knowledge_base({},"what loan types does abhi offer",session.language)
-                next_message=loan_info+"\n\n"+next_message
+            if next_field=="confirm_transfer":
+                next_message=backend_logic.generate_confirmation_prompt(session.pending_fields,session.language)
+            else:
+                next_message=backend_logic.generate_prompt_message(next_field,session.language)
+                if session.pending_intent=="request_loan" and next_field=="wants_contact":
+                    loan_info=backend_logic.knowledge_base({},"what loan types does abhi offer",session.language)
+                    next_message=loan_info+"\n\n"+next_message
             return {
                 "type":"ask_field",
                 "message":next_message,
@@ -236,15 +288,19 @@ def chat(request:ChatRequest):
         }
 
     parsed=backend_logic.detect_intent(message)
-    intent=parsed.get("intent", "unknown")
-    fields=parsed.get("fields", {})
-    language=parsed.get("language", "en")
+    intent=parsed.get("intent","unknown")
+    fields=parsed.get("fields",{})
+    language=parsed.get("language","en")
     intent_doc=backend_logic.get_intent(intent)
     if intent_doc is None:
         intent=backend_logic.get_intent("unknown")["name"]
         required=[]
     else:
         required=intent_doc["required_fields"]
+    #confirm_transfer is never a real extractable field - it's a step we add ourselves
+    #below, never something the classifier should be trusted to set on its own
+    fields.pop("confirm_transfer",None)
+
     missing=[]
     field_errors={}
     for field in required:
@@ -276,9 +332,19 @@ def chat(request:ChatRequest):
                 fields.pop(field,None)
                 missing.append(field)
                 field_errors[field]=error
+
+    #even when every field arrived in a single message, still make the user confirm
+    #before send_money actually executes - this is the fast, one-shot extraction path,
+    #the one with the least opportunity to catch a misheard amount/account along the way
+    if intent=="send_money" and not missing and "confirm_transfer" not in fields:
+        missing.append("confirm_transfer")
+
     if missing:
         first_field=missing[0]
-        field_prompt=backend_logic.generate_prompt_message(first_field,language)
+        if first_field=="confirm_transfer":
+            field_prompt=backend_logic.generate_confirmation_prompt(fields,language)
+        else:
+            field_prompt=backend_logic.generate_prompt_message(first_field,language)
         response_message=field_prompt
         if first_field in field_errors:
             response_message=backend_logic.localize_error(field_errors[first_field],language)+" "+field_prompt

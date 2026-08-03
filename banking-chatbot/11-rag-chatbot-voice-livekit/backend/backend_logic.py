@@ -151,12 +151,17 @@ def detect_intent(query):
         "Now classify this question, respond ONLY in JSON with keys intent, fields, and language, nothing else. "
         "User question: "+query
     )
+    #keep_alive keeps the model loaded in memory for this long after each call - without
+    #it, ollama's default ~5min idle timeout unloads the model between conversation turns,
+    #and the next request pays a multi-second cold-start reload penalty (confirmed via
+    #`ollama ps` and direct timing: 6.4s cold vs 0.5s warm for the identical call)
     response=requests.post(OLLAMA_URL,json={
-        "model":"llama3",
+        "model":"qwen2.5:3b",
         "messages":[{"role":"user","content":prompt}],
         "format":"json",
         "stream":False,
-        "options":{"temperature":0.3}
+        "options":{"temperature":0.3},
+        "keep_alive":"30m"
     })
     result=response.json()
     llm_output=result["message"]["content"].strip()
@@ -167,6 +172,24 @@ def detect_intent(query):
     if parsed_out.get("language") not in ("en","ur"):
         parsed_out["language"]="en"
     return parsed_out
+
+def generate_confirmation_prompt(pending_fields,language):
+    amount=pending_fields.get("amount","")
+    from_account=pending_fields.get("from_account","")
+    to_account=pending_fields.get("recipient_account","")
+    if language=="ur":
+        return f"کیا آپ اکاؤنٹ {from_account} سے اکاؤنٹ {to_account} میں {amount} پی کے آر (روپے) بھیجنا چاہتے ہیں؟ تصدیق کریں؟"
+    return f"Send {amount} PKR from account {from_account} to account {to_account}, confirm?"
+POSITIVE_CONFIRM_WORDS={"yes","y","yeah","sure","haan","han","confirm","confirmed","ok","okay","oh","ji","jee","g","ہاں","تصدیق"}
+NEGATIVE_CONFIRM_WORDS={"no","n","nope","nah","cancel","cancelled","nahi","nhi","منسوخ","نہیں"}
+def is_positive_confirmation(text):
+    #word-level matching, not substring - "no" as a raw substring would match inside
+    #"now"/"know"/etc, so this splits on whitespace and checks whole words only
+    words=text.strip().lower().split()
+    return any(word in POSITIVE_CONFIRM_WORDS for word in words)
+def is_negative_confirmation(text):
+    words=text.strip().lower().split()
+    return any(word in NEGATIVE_CONFIRM_WORDS for word in words)
 
 def get_field_prompt(field_name):
     cached_field_prompts=get_cached_field_prompts()
@@ -183,10 +206,6 @@ def generate_prompt_message(field_name,language,max_attempts=2):
             fixed_fallback="براہ کرم مطلوبہ معلومات فراہم کریں۔"
         else:
             fixed_fallback="Please provide your "+field_name.replace("_"," ")+"."
-
-    #a small local model has repeatedly generated grammatically broken urdu in ways no
-    #amount of extra validation checks can fully catch (wrong words, wrong person, bad grammar).
-    #urdu always has a curated fallback now, so just use that directly instead of gambling on generation.
     if language=="ur":
         return fixed_fallback
 
@@ -203,7 +222,8 @@ def generate_prompt_message(field_name,language,max_attempts=2):
             "model":"llama3",
             "messages":[{"role":"user","content":prompt}],
             "stream":False,
-            "options":{"temperature":0.3}
+            "options":{"temperature":0.3},
+            "keep_alive":"30m"
         })
         result=response.json()["message"]["content"].strip()
         last_attempt=result
@@ -246,13 +266,8 @@ NUMBER_WORDS={
     "pachas":50,"pachaas":50,"saath":60,
     "sattar":70,"assi":80,"assy":80,"nabbe":90,"nawbay":90,
     "sau":100,"sou":100,"hazar":1000,"hazaar":1000,
-    #urdu script entries are derived from urdu_numbers.py, the same source tts.py uses for speech output
     **urdu_words_to_numbers()
 }
-
-#currency/filler words allowed alongside a spoken number, e.g. "500 rupees" or "دو سو روپے".
-#any other unrecognized word means the transcription is unreliable - refuse to guess rather
-#than silently parse a wrong amount (see: "دو سوروں بے" misparsing to 2 instead of 200).
 AMOUNT_FILLER_WORDS={"rupee","rupees","rs","pkr","rupaye","rupya","only","and","روپے","روپیہ","روپیے"}
 
 def parse_word_number(text):
@@ -312,7 +327,8 @@ def ask_llm(query,relevant_parts,language="en"):
         "model":model,
         "messages":[{"role":"user","content":prompt}],
         "stream":False,
-        "options":{"temperature":0.3}
+        "options":{"temperature":0.3},
+        "keep_alive":"30m"
     })
     result=response.json()
     return result["message"]["content"]
@@ -355,6 +371,7 @@ def send_money(fields,original_query,language):
         if language=="ur":
             return "کافی رقم نہیں ہے۔ آپ کا بیلنس "+str(sender["balance"])+" روپے ہے، "+str(amount)+" نہیں بھیجے جا سکتے۔"
         return "Insufficient funds. Your balance is PKR "+str(sender["balance"])+", cannot send "+str(amount)+"."
+    
     accounts_collection.update_one({"account_number":from_account},{"$inc":{"balance":-amount}})
     accounts_collection.update_one({"account_number":recipient_account},{"$inc":{"balance":amount}})
     new_balance=sender["balance"]-amount
@@ -407,7 +424,8 @@ def unknown(fields,original_query,language):
         "options":{
             "num_predict":40,
             "temperature":0.3
-        }
+        },
+        "keep_alive":"30m"
     })
     return response.json()["message"]["content"].strip()
 
@@ -469,4 +487,4 @@ def not_credited(fields,original_query,language):
 #add these tts models too #sherpa
 #kokoro
 #coqui coice cloning supported
-#and different response each time, temp high 
+#and different response each time, temp high
